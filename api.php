@@ -7,8 +7,8 @@ Class api_methode
 	// it use to manage API Services
 	function func_comminicator($header_array = array(),$body=array())
 	{
-		$req_id = $this->req_id = time().rand(10000,99999);
 		$response_time = 0;
+		$data_json = "";
 		$url = $this->url;
 		$response = "";
 		$methode = $this->methode;
@@ -26,7 +26,7 @@ Class api_methode
 			CURLOPT_FOLLOWLOCATION => true,
 			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 			CURLOPT_CUSTOMREQUEST => $methode,
-			CURLOPT_POSTFIELDS =>$body,
+			CURLOPT_POSTFIELDS =>$data_json,
 			CURLOPT_HTTPHEADER => $header_array
 		));
 		$response = curl_exec($curl);
@@ -39,11 +39,12 @@ Class api_methode
 		  $response_time = $info['total_time'];			
 		}
 		curl_close($curl);
-		return $this->func_response_manager($status,$header_array,$body,$response_time);
+		return $this->func_response_manager($status,$header_array,$body,$response,$response_time);
 	}
 	//its manage all of response and error handler
-	function func_response_manager($status,$header_array,$body,$response_time)
+	function func_response_manager($status,$header_array,$body,$response_body,$response_time)
 	{
+		$req_id = $this->req_id = time().rand(10000,99999);
 		$methode = $this->methode;
 		switch ($status) 
 		{
@@ -84,7 +85,6 @@ Class api_methode
 				$status_body = "";
 				break;
 		}
-		$req_id = $this->req_id;
 		$response_array = array(
 			"request" => array(
 				"req_id" => $req_id,
@@ -96,7 +96,7 @@ Class api_methode
 				"status" =>$status,
 				"description" => $status_body,
 				"time" => $response_time,
-				"body" => $body,
+				"body" => $response_body,
 			)
 		);
 		$this->func_log_request($req_id,json_encode($response_array));
@@ -120,7 +120,6 @@ Class api_methode
 	}
 	function func_post($data)
 	{
-		$this->methode = "POST";
 		$token_response = $this->func_get_token();
 		$token_status = $token_response['response']['status'];
 		$body = array();
@@ -128,10 +127,43 @@ Class api_methode
 		{
 			$token = $token_response['response']['body'];
 			$header = array('Content-Type: application/json','Authorization: Bearer ' . $token);
-			$body_reponse = $this->func_comminicator($header,$data);
-			$body = $body_reponse;
+			$this->methode = "POST";
+			$body = $this->func_comminicator($header,$data);
 		}
 		return $body;
+	}
+}
+Class erro_handler
+{
+	function check($value,$type)
+	{
+		switch ($type) 
+		{
+			case 'email':
+				$check_response = $this->check_email($value);
+				break;
+			case 'url':
+				$check_response = $this->check_url($value);
+				break;
+			default:
+				$check_response = false;
+				break;
+		}
+		return $check_response;
+	}
+	function check_email($value)
+	{
+		$status = false;
+		$validation_regex = '/^\\S+@\\S+\\.\\S+$/'; 
+		if(preg_match($validation_regex, $value)){$status = true;}
+		return $status;
+	}
+	function check_url($value)
+	{
+		$status = false;
+		$validation_regex = "/^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{1,256}\\.[a-zA-Z0-9()]{1,6}\\b(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$/"; 
+		if(preg_match($validation_regex, $value)){$status = true;}
+		return $status;
 	}
 }
 
