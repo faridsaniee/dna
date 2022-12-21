@@ -127,7 +127,6 @@ Class api_methode
 		if($token_status == 200)
 		{
 			$token = $token_response['response']['body'];
-			$token = "d417fcbc-94b7-4357-aff3-536c33364428";
 			$header = array('Content-Type: application/json','Authorization: Bearer ' . $token);
 			$body_reponse = $this->func_comminicator($header,$data);
 			$body = $body_reponse;
